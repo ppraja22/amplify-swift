@@ -1,6 +1,27 @@
-// swift-tools-version:5.7
+// swift-tools-version:5.9
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 import PackageDescription
+
+let swift6Settings: [SwiftSetting] = [
+    .enableExperimentalFeature("ConciseMagicFile"),
+    .enableExperimentalFeature("ForwardTrailingClosures"),
+    .enableExperimentalFeature("AccessLevelOnImport"),
+    .enableExperimentalFeature("InternalImportsByDefault"),
+    .enableExperimentalFeature("GlobalConcurrency"),
+    .enableExperimentalFeature("InferSendableFromCaptures"),
+    .enableExperimentalFeature("RegionBasedIsolation"),
+    .enableExperimentalFeature("InternalImportsByDefault"),
+    .enableExperimentalFeature("StrictConcurrency"),
+    .enableExperimentalFeature("ImplicitOpenExistentials"),
+    .enableExperimentalFeature("BareSlashRegexLiterals"),
+    .enableExperimentalFeature("DeprecateApplicationMain"),
+    .enableExperimentalFeature("ImportObjcForwardDeclarations"),
+    .enableExperimentalFeature("DisableOutwardActorInference"),
+    .enableExperimentalFeature("DeprecateApplicationMain"),
+    .enableExperimentalFeature("IsolatedDefaultValues")
+]
+let isSwift6Enabled = true
+let allTargets = false
 
 let platforms: [SupportedPlatform] = [
     .iOS(.v13),
@@ -26,6 +47,7 @@ let amplifyTargets: [Target] = [
         resources: [
             .copy("Resources/PrivacyInfo.xcprivacy")
         ]
+        
     ),
     .target(
         name: "AWSPluginsCore",
@@ -169,6 +191,7 @@ let authTargets: [Target] = [
         resources: [
             .copy("Resources/PrivacyInfo.xcprivacy")
         ]
+
     ),
     .target(
         name: "libtommathAmplify",
@@ -213,6 +236,7 @@ let dataStoreTargets: [Target] = [
         resources: [
             .copy("Resources/PrivacyInfo.xcprivacy")
         ]
+
     ),
     .testTarget(
         name: "AWSDataStoreCategoryPluginTests",
@@ -303,6 +327,7 @@ let internalPinpointTargets: [Target] = [
         resources: [
             .copy("Resources/PrivacyInfo.xcprivacy")
         ]
+        , swiftSettings: swift6Settings
     ),
     .testTarget(
         name: "InternalAWSPinpointUnitTests",
@@ -376,6 +401,7 @@ let predictionsTargets: [Target] = [
         resources: [
             .copy("Resources/PrivacyInfo.xcprivacy")
         ]
+
     ),
     .testTarget(
         name: "AWSPredictionsPluginUnitTests",
@@ -419,6 +445,7 @@ let loggingTargets: [Target] = [
         resources: [
             .copy("Resources/PrivacyInfo.xcprivacy")
         ]
+
     ),
     .testTarget(
         name: "AWSCloudWatchLoggingPluginTests",
@@ -445,6 +472,14 @@ let targets: [Target] = amplifyTargets
     + internalPinpointTargets
     + predictionsTargets
     + loggingTargets
+
+if isSwift6Enabled, allTargets {
+    for target in targets {
+        var settings = target.swiftSettings ?? []
+        settings.append(contentsOf: swift6Settings)
+        target.swiftSettings = settings
+    }
+}
 
 let package = Package(
     name: "Amplify",
