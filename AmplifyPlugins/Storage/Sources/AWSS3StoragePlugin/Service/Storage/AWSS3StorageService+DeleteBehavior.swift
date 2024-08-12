@@ -10,8 +10,8 @@ import Amplify
 
 extension AWSS3StorageService {
 
-    func delete(serviceKey: String, onEvent: @escaping StorageServiceDeleteEventHandler) {
-        let request = AWSS3DeleteObjectRequest(bucket: bucket, key: serviceKey)
+    func delete(serviceKey: String, bucket: AWSS3Bucket, onEvent: @escaping StorageServiceDeleteEventHandler) {
+        let request = AWSS3DeleteObjectRequest(bucket: bucket.name, key: serviceKey)
 
         awsS3.deleteObject(request) { result in
             switch result {

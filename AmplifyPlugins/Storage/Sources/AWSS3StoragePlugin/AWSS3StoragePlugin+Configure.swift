@@ -41,6 +41,7 @@ extension AWSS3StoragePlugin {
             let storageService = try AWSS3StorageService(authService: authService,
                                                          region: configClosures.retrieveRegion(),
                                                          bucket: configClosures.retrieveBucket(),
+                                                         buckets: configClosures.retrieveBuckets(),
                                                          httpClientEngineProxy: self.httpClientEngineProxy)
             storageService.urlRequestDelegate = self.urlRequestDelegate
 
@@ -86,6 +87,7 @@ extension AWSS3StoragePlugin {
     private struct ConfigurationClosures {
         let retrieveRegion: () throws -> String
         let retrieveBucket: () throws -> String
+        let retrieveBuckets: () throws -> [AWSS3Bucket]
         let retrieveDefaultAccessLevel: () throws -> StorageAccessLevel
     }
 
@@ -106,8 +108,20 @@ extension AWSS3StoragePlugin {
             return storage.bucketName
         }
 
+        let bucketsClosure = {
+            guard let buckets = storage.buckets else {
+                return try [AWSS3Bucket(name: bucketClosure(), region: regionClosure())]
+            }
+
+            return try buckets.compactMap { bucket in
+                try AWSS3StoragePlugin.validateBucketNonEmpty(bucket.bucketName)
+                return AWSS3Bucket(name: bucket.bucketName, region: bucket.awsRegion)
+            }
+        }
+
         return ConfigurationClosures(retrieveRegion: regionClosure,
                                      retrieveBucket: bucketClosure,
+                                     retrieveBuckets: bucketsClosure,
                                      retrieveDefaultAccessLevel: { .guest })
     }
 
@@ -120,10 +134,14 @@ extension AWSS3StoragePlugin {
 
         let regionClosure = { try AWSS3StoragePlugin.getRegion(configObject) }
         let bucketClosure = { try AWSS3StoragePlugin.getBucket(configObject) }
+        let bucketsClosure = {
+            return try [AWSS3Bucket(name: bucketClosure(), region: regionClosure())]
+        }
         let defaultAccessLevelClosure = { try AWSS3StoragePlugin.getDefaultAccessLevel(configObject) }
 
         return ConfigurationClosures(retrieveRegion: regionClosure,
-                                     retrieveBucket: bucketClosure,
+                                     retrieveBucket: bucketClosure, 
+                                     retrieveBuckets: bucketsClosure,
                                      retrieveDefaultAccessLevel: defaultAccessLevelClosure)
     }
 

@@ -150,6 +150,8 @@ class DefaultStorageMultipartUploadClient: StorageMultipartUploadClient {
                     let operation = AWSS3SigningOperation.uploadPart(partNumber: partNumber, uploadId: uploadId)
                     let preSignedURL = try await serviceProxy.preSignedURLBuilder.getPreSignedURL(
                         key: self.key,
+                        bucket: self.bucket,
+                        config: .init(),
                         signingOperation: operation,
                         // user-controlled metadata should *not* be provided
                         // with each upload part.

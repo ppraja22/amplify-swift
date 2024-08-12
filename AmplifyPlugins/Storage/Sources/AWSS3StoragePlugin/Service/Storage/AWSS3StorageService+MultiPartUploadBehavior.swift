@@ -11,6 +11,7 @@ import Amplify
 extension AWSS3StorageService {
 
     func multiPartUpload(serviceKey: String,
+                         bucket: AWSS3Bucket,
                          uploadSource: UploadSource,
                          contentType: String?,
                          metadata: [String: String]?,
@@ -22,7 +23,7 @@ extension AWSS3StorageService {
         }
 
         // Validate parameters
-        guard attempt(try validateParameters(bucket: bucket, key: serviceKey, accelerationModeEnabled: false), fail: fail) else { return }
+        guard attempt(try validateParameters(bucket: bucket.name, key: serviceKey, accelerationModeEnabled: false), fail: fail) else { return }
 
         let requestHeaders: [String: String] = [:]
 
@@ -30,12 +31,12 @@ extension AWSS3StorageService {
         guard let uploadFile = attempt(try uploadSource.getFile(), fail: fail) else { return }
 
         let client = DefaultStorageMultipartUploadClient(serviceProxy: self,
-                                                         bucket: bucket,
+                                                         bucket: bucket.name,
                                                          key: serviceKey,
                                                          uploadFile: uploadFile,
                                                          metadata: metadata)
         let multipartUploadSession = StorageMultipartUploadSession(client: client,
-                                                                   bucket: bucket,
+                                                                   bucket: bucket.name,
                                                                    key: serviceKey,
                                                                    contentType: contentType,
                                                                    requestHeaders: requestHeaders,

@@ -13,12 +13,15 @@ import Amplify
 extension AWSS3StorageService {
 
     func getPreSignedURL(serviceKey: String,
+                         bucket: AWSS3Bucket,
                          signingOperation: AWSS3SigningOperation,
                          metadata: [String: String]?,
                          accelerate: Bool?,
                          expires: Int) async throws -> URL {
         return try await preSignedURLBuilder.getPreSignedURL(
             key: serviceKey,
+            bucket: bucket.name,
+            config: clients[bucket.region]!.config, // TODO: Validate
             signingOperation: signingOperation,
             metadata: metadata,
             accelerate: accelerate,
@@ -26,10 +29,10 @@ extension AWSS3StorageService {
         )
     }
 
-    func validateObjectExistence(serviceKey: String) async throws {
+    func validateObjectExistence(serviceKey: String, bucket: AWSS3Bucket) async throws {
         do {
             _ = try await self.client.headObject(input: .init(
-                bucket: self.bucket,
+                bucket: bucket.name,
                 key: serviceKey
             ))
         } catch is AWSS3.NotFound {

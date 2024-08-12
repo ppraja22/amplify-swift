@@ -18,21 +18,19 @@ import AWSClientRuntime
 class AWSS3PreSignedURLBuilderAdapter: AWSS3PreSignedURLBuilderBehavior {
     let defaultExpiration: Int64 = 50 * 60 // 50 minutes
 
-    let bucket: String
-    let config: S3Client.S3ClientConfiguration
     let logger: Logger
 
     /// Creates a pre-signed URL builder.
     /// - Parameter credentialsProvider: Credentials Provider.
-    init(config: S3Client.S3ClientConfiguration, bucket: String, logger: Logger = storageLogger) {
-        self.bucket = bucket
-        self.config = config
+    init(logger: Logger = storageLogger) {
         self.logger = logger
     }
 
     /// Gets pre-signed URL.
     /// - Returns: Pre-Signed URL
     func getPreSignedURL(key: String,
+                         bucket: String,
+                         config: S3Client.S3ClientConfiguration,
                          signingOperation: AWSS3SigningOperation,
                          metadata: [String: String]? = nil,
                          accelerate: Bool? = nil,

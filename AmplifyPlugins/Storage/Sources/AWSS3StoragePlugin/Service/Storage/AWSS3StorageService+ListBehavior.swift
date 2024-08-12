@@ -14,6 +14,7 @@ import AWSClientRuntime
 extension AWSS3StorageService {
 
     func list(prefix: String,
+              bucket: AWSS3Bucket,
               options: StorageListRequest.Options) async throws -> StorageListResult {
         if let error = StorageRequestUtils.validateTargetIdentityId(options.targetIdentityId,
                                                                     accessLevel: options.accessLevel) {
@@ -29,7 +30,7 @@ extension AWSS3StorageService {
         } else {
             finalPrefix = prefix
         }
-        let input = ListObjectsV2Input(bucket: bucket,
+        let input = ListObjectsV2Input(bucket: bucket.name,
                                        continuationToken: options.nextToken,
                                        delimiter: options.subpathStrategy.delimiter,
                                        maxKeys: Int(options.pageSize),

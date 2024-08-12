@@ -11,6 +11,7 @@ import Amplify
 extension AWSS3StorageService {
 
     func upload(serviceKey: String,
+                bucket: AWSS3Bucket,
                 uploadSource: UploadSource,
                 contentType: String?,
                 metadata: [String: String]?,
@@ -21,11 +22,11 @@ extension AWSS3StorageService {
             onEvent(.failed(storageError))
         }
 
-        guard attempt(try validateParameters(bucket: bucket, key: serviceKey, accelerationModeEnabled: false), fail: fail) else { return }
+        guard attempt(try validateParameters(bucket: bucket.name, key: serviceKey, accelerationModeEnabled: false), fail: fail) else { return }
 
         Task {
             let transferTask = createTransferTask(transferType: .upload(onEvent: onEvent),
-                                                  bucket: bucket,
+                                                  bucket: bucket.name,
                                                   key: serviceKey)
             let uploadFileURL: URL
             guard let uploadFile = attempt(try uploadSource.getFile(), fail: fail) else { return }
@@ -35,6 +36,8 @@ extension AWSS3StorageService {
 
             do {
                 let preSignedURL = try await preSignedURLBuilder.getPreSignedURL(key: serviceKey,
+                                                                                 bucket: bucket.name,
+                                                                                 config: self.clients[bucket.region]!.config,
                                                                                  signingOperation: .putObject,
                                                                                  metadata: metadata,
                                                                                  accelerate: accelerate,

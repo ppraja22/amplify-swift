@@ -28,12 +28,13 @@ extension AWSS3StoragePlugin {
                                                             targetIdentityId: options.targetIdentityId)
         let serviceKey = prefix + request.key
         if let pluginOptions = options.pluginOptions as? AWSStorageGetURLOptions, pluginOptions.validateObjectExistence {
-            try await storageService.validateObjectExistence(serviceKey: serviceKey)
+            try await storageService.validateObjectExistence(serviceKey: serviceKey, bucket: .init(name: "", region: ""))
         }
         let accelerate = try AWSS3PluginOptions.accelerateValue(
             pluginOptions: options.pluginOptions)
         let result = try await storageService.getPreSignedURL(
             serviceKey: serviceKey,
+            bucket: .init(name: "", region: ""),
             signingOperation: .getObject,
             metadata: nil,
             accelerate: accelerate,

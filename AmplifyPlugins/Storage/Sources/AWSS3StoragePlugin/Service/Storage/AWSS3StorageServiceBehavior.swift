@@ -41,22 +41,27 @@ protocol AWSS3StorageServiceBehavior {
 
     func reset()
 
+    func client(forRegion region: String) -> S3Client
+
     func getEscapeHatch() -> S3Client
 
     func download(serviceKey: String,
+                  bucket: AWSS3Bucket,
                   fileURL: URL?,
                   accelerate: Bool?,
                   onEvent: @escaping StorageServiceDownloadEventHandler)
 
     func getPreSignedURL(serviceKey: String,
+                         bucket: AWSS3Bucket,
                          signingOperation: AWSS3SigningOperation,
                          metadata: [String: String]?,
                          accelerate: Bool?,
                          expires: Int) async throws -> URL
 
-    func validateObjectExistence(serviceKey: String) async throws
+    func validateObjectExistence(serviceKey: String, bucket: AWSS3Bucket) async throws
 
     func upload(serviceKey: String,
+                bucket: AWSS3Bucket,
                 uploadSource: UploadSource,
                 contentType: String?,
                 metadata: [String: String]?,
@@ -64,6 +69,7 @@ protocol AWSS3StorageServiceBehavior {
                 onEvent: @escaping StorageServiceUploadEventHandler)
 
     func multiPartUpload(serviceKey: String,
+                         bucket: AWSS3Bucket,
                          uploadSource: UploadSource,
                          contentType: String?,
                          metadata: [String: String]?,
@@ -72,9 +78,11 @@ protocol AWSS3StorageServiceBehavior {
 
     @available(*, deprecated, message: "Use `AWSS3StorageListObjectsTask` instead")
     func list(prefix: String,
+              bucket: AWSS3Bucket,
               options: StorageListRequest.Options) async throws -> StorageListResult
 
     @available(*, deprecated, message: "Use `AWSS3StorageRemoveTask` instead")
     func delete(serviceKey: String,
+                bucket: AWSS3Bucket,
                 onEvent: @escaping StorageServiceDeleteEventHandler)
 }

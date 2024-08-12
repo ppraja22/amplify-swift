@@ -40,6 +40,8 @@ protocol AWSS3PreSignedURLBuilderBehavior {
     ///
     /// - Tag: AWSS3PreSignedURLBuilderBehavior.getPreSignedURL
     func getPreSignedURL(key: String,
+                         bucket: String,
+                         config: S3Client.S3ClientConfiguration,
                          signingOperation: AWSS3SigningOperation,
                          metadata: [String: String]?,
                          accelerate: Bool?,

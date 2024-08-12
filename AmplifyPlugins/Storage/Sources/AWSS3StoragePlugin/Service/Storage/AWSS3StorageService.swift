@@ -12,9 +12,18 @@ import AWSPluginsCore
 import ClientRuntime
 @_spi(PluginHTTPClientEngine) import InternalAmplifyCredentials
 
+struct AWSS3Bucket {
+    let name: String
+    let region: String
+}
+
+struct AWSS3ClientPair {
+    let client: S3Client
+    let config: S3Client.S3ClientConfiguration
+}
+
 /// - Tag: AWSS3StorageService
 class AWSS3StorageService: AWSS3StorageServiceBehavior, StorageServiceProxy {
-
     // resettable values
     private var authService: AWSAuthCredentialsProviderBehavior?
     var logger: Logger!
@@ -30,6 +39,8 @@ class AWSS3StorageService: AWSS3StorageServiceBehavior, StorageServiceProxy {
 
     /// - Tag: AWSS3StorageService.client
     var client: S3ClientProtocol
+
+    let clients: [String: AWSS3ClientPair]
 
     var userAgent: String {
         get async {
@@ -56,6 +67,7 @@ class AWSS3StorageService: AWSS3StorageServiceBehavior, StorageServiceProxy {
     convenience init(authService: AWSAuthCredentialsProviderBehavior,
                      region: String,
                      bucket: String,
+                     buckets: [AWSS3Bucket]? = nil,
                      httpClientEngineProxy: HttpClientEngineProxy? = nil,
                      storageConfiguration: StorageConfiguration = .default,
                      storageTransferDatabase: StorageTransferDatabase = .default,
@@ -63,25 +75,40 @@ class AWSS3StorageService: AWSS3StorageServiceBehavior, StorageServiceProxy {
                      sessionConfiguration: URLSessionConfiguration? = nil,
                      delegateQueue: OperationQueue? = nil,
                      logger: Logger = storageLogger) throws {
-        let credentialsProvider = authService.getCredentialsProvider()
-        let clientConfig = try S3Client.S3ClientConfiguration(
-            region: region,
-            credentialsProvider: credentialsProvider,
-            signingRegion: region
-        )
-
-        if var httpClientEngineProxy = httpClientEngineProxy {
-            httpClientEngineProxy.target = baseClientEngine(for: clientConfig)
-            clientConfig.httpClientEngine = UserAgentSettingClientEngine(
-                target: httpClientEngineProxy
+        let createClient: (String) throws -> AWSS3ClientPair = { region in
+            let credentialsProvider = authService.getCredentialsProvider()
+            let clientConfig = try S3Client.S3ClientConfiguration(
+                region: region,
+                credentialsProvider: credentialsProvider,
+                signingRegion: region
             )
-        } else {
-            clientConfig.httpClientEngine = .userAgentEngine(for: clientConfig)
+
+            if var httpClientEngineProxy = httpClientEngineProxy {
+                httpClientEngineProxy.target = baseClientEngine(for: clientConfig)
+                clientConfig.httpClientEngine = UserAgentSettingClientEngine(
+                    target: httpClientEngineProxy
+                )
+            } else {
+                clientConfig.httpClientEngine = .userAgentEngine(for: clientConfig)
+            }
+
+            return .init(client: S3Client(config: clientConfig), config: clientConfig)
         }
 
-        let s3Client = S3Client(config: clientConfig)
-        let awsS3 = AWSS3Adapter(s3Client, config: clientConfig)
-        let preSignedURLBuilder = AWSS3PreSignedURLBuilderAdapter(config: clientConfig, bucket: bucket)
+        let s3Client = try createClient(region)
+        let awsS3 = AWSS3Adapter(s3Client.client, config: s3Client.config)
+
+        var clients: [String: AWSS3ClientPair] = [
+            region: s3Client
+        ]
+
+        if let buckets, !buckets.isEmpty {
+            for bucket in buckets where clients[bucket.region] != nil {
+                clients[bucket.region] = try createClient(bucket.region)
+            }
+        }
+
+        let preSignedURLBuilder = AWSS3PreSignedURLBuilderAdapter()
 
         var sessionConfig: URLSessionConfiguration
         if let sessionConfiguration = sessionConfiguration {
@@ -106,10 +133,12 @@ class AWSS3StorageService: AWSS3StorageServiceBehavior, StorageServiceProxy {
                   fileSystem: fileSystem,
                   sessionConfiguration: sessionConfig,
                   logger: logger,
-                  s3Client: s3Client,
+                  s3Client: s3Client.client,
                   preSignedURLBuilder: preSignedURLBuilder,
                   awsS3: awsS3,
-                  bucket: bucket)
+                  bucket: bucket,
+                  clients: clients
+        )
     }
 
     init(authService: AWSAuthCredentialsProviderBehavior,
@@ -122,7 +151,9 @@ class AWSS3StorageService: AWSS3StorageServiceBehavior, StorageServiceProxy {
          s3Client: S3Client,
          preSignedURLBuilder: AWSS3PreSignedURLBuilderBehavior,
          awsS3: AWSS3Behavior,
-         bucket: String) {
+         bucket: String,
+         clients: [String: AWSS3ClientPair]
+    ) {
         self.storageConfiguration = storageConfiguration
         self.storageTransferDatabase = storageTransferDatabase
         self.fileSystem = fileSystem
@@ -138,6 +169,7 @@ class AWSS3StorageService: AWSS3StorageServiceBehavior, StorageServiceProxy {
         self.preSignedURLBuilder = preSignedURLBuilder
         self.awsS3 = awsS3
         self.bucket = bucket
+        self.clients = clients
 
         StorageBackgroundEventsRegistry.register(identifier: identifier)
 
@@ -314,6 +346,13 @@ class AWSS3StorageService: AWSS3StorageServiceBehavior, StorageServiceProxy {
             data = nil
             transferTask.fail(error: error)
         }
+    }
+
+    func client(forRegion region: String) throws -> S3Client {
+        guard let client = clients[region]?.client else {
+            throw StorageError.configuration("Invalid region", "Please speficy a region that is configured", nil)
+        }
+        return client
     }
 
 }
