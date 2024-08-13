@@ -48,7 +48,7 @@ actor AppSyncRealTimeClient: AppSyncRealTimeClientProtocol {
     /// WebSocketClient offering connections at the WebSocket protocol level
     internal var webSocketClient: AppSyncWebSocketClientProtocol
     /// Writable data stream convert WebSocketEvent to AppSyncRealTimeResponse
-    internal let subject = PassthroughSubject<AppSyncRealTimeResponse, Never>()
+    internal let subject = PassthroughSubject<Result<AppSyncRealTimeResponse, Error>, Never>()
 
     var isConnected: Bool {
         self.state.value == .connected
@@ -283,19 +283,39 @@ actor AppSyncRealTimeClient: AppSyncRealTimeClientProtocol {
     private func filterAppSyncSubscriptionEvent(
         with id: String
     ) -> AnyPublisher<AppSyncSubscriptionEvent, Never> {
-        subject.filter { $0.id == id || $0.type == .connectionError }
-        .map { response -> AppSyncSubscriptionEvent? in
-            switch response.type {
-            case .connectionError, .error:
-                return .error(Self.decodeAppSyncRealTimeResponseError(response.payload))
-            case .data:
-                return response.payload.map { .data($0) }
-            default:
-                return nil
+        subject.filter {
+            switch $0 {
+            case .success(let response): return response.id == id || response.type == .connectionError
+            case .failure(let error): return true
+            }
+        }
+        .map { result -> AppSyncSubscriptionEvent? in
+            switch result {
+            case .success(let response):
+                switch response.type {
+                case .connectionError, .error:
+                    return .error(Self.decodeAppSyncRealTimeResponseError(response.payload))
+                case .data:
+                    return response.payload.map { .data($0) }
+                default:
+                    return nil
+                }
+            case .failure(let error):
+                return .error([error])
             }
         }
         .compactMap { $0 }
         .eraseToAnyPublisher()
+    }
+
+    private func reconnect() async {
+        do {
+            log.debug("[AppSyncRealTimeClient] Reconnecting")
+            await disconnect()
+            try await connect()
+        } catch {
+            log.debug("[AppSyncRealTimeClient] Failed to reconnect, error: \(error)")
+        }
     }
 
     private static func decodeAppSyncRealTimeResponseError(_ data: JSONValue?) -> [Error] {
@@ -358,9 +378,9 @@ extension AppSyncRealTimeClient {
             self.cancellablesBindToConnection = Set()
 
         case .error(let error):
-            // Since we've activated auto-reconnect functionality in WebSocketClient upon connection failure,
-            // we only record errors here for debugging purposes.
+            // Propagate connection error to downstream for Sync engine to restart
             log.debug("[AppSyncRealTimeClient] WebSocket error event: \(error)")
+            self.subject.send(.failure(error))
         case .string(let string):
             guard let data = string.data(using: .utf8) else {
                 log.debug("[AppSyncRealTimeClient] Failed to decode string \(string)")
@@ -390,7 +410,7 @@ extension AppSyncRealTimeClient {
         switch event.type {
         case .connectionAck:
             log.debug("[AppSyncRealTimeClient] AppSync connected: \(String(describing: event.payload))")
-            subject.send(event)
+            subject.send(.success(event))
 
             self.resumeExistingSubscriptions()
             self.state.send(.connected)
@@ -401,7 +421,7 @@ extension AppSyncRealTimeClient {
 
         default:
             log.debug("[AppSyncRealTimeClient] AppSync received response: \(event)")
-            subject.send(event)
+            subject.send(.success(event))
         }
     }
 
@@ -414,7 +434,7 @@ extension AppSyncRealTimeClient {
             .sink(receiveValue: {
                 self.log.debug("[AppSyncRealTimeClient] KeepAlive timed out, disconnecting")
                 Task { [weak self] in
-                    await self?.disconnect()
+                    await self?.reconnect()
                 }.toAnyCancellable.store(in: &self.cancellables)
             })
             .store(in: &cancellablesBindToConnection)

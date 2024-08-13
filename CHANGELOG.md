@@ -1,5 +1,72 @@
 # Changelog
 
+## 2.37.0 (2024-08-12)
+
+### Features
+
+- **api**: propagate connectionLost error from websocket client to sync engine (#3800)
+
+## 2.36.0 (2024-07-18)
+
+### Features
+
+- **Storage**: Adding subpath strategy to the List operation (#3775)
+
+## 2.35.7 (2024-07-16)
+
+### Bug Fixes
+
+- **core**: update privacy info (#3777)
+
+## 2.35.6 (2024-07-16)
+
+### Bug Fixes
+
+- **data**: Gen2 hasOne associatedFields compile issue (#3700)
+
+## 2.35.5 (2024-07-08)
+
+### Bug Fixes
+
+- **Auth**: Throw error if hosted UI is not presented during sign out (#3769)
+
+## 2.35.4 (2024-06-25)
+
+### Bug Fixes
+
+- **Auth**: Resolve AuthZ state correctly when in error state (#3762)
+- **core**: remove InternalAmplifyCredentials from products (#3750)
+
+## 2.35.3 (2024-06-13)
+
+### Bug Fixes
+
+- **Auth**: Adding credentialsProvider to Cognito clients (#3745)
+
+## 2.35.2 (2024-06-10)
+
+### Bug Fixes
+
+- resolve strict concurrency errors (#3731)
+
+## 2.35.1 (2024-06-04)
+
+### Bug Fixes
+
+- **datastore**: reconnect the AppSyncRealTimeClient once connection is stale (#3734)
+
+## 2.35.0 (2024-06-04)
+
+### Features
+
+- **datastore**: refactor datastore category to use APICategoryGraphQLBehavior (#3666)
+
+### Bug Fixes
+
+- **ci**: update unstable release file path in CI scripts (#3737)
+
+## 2.34.4 (2024-06-03)
+
 ## 2.34.3 (2024-05-30)
 
 ### Bug Fixes
