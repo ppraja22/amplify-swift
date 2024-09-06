@@ -7,10 +7,10 @@ on:
         required: true
         type: string
 
-  push:
-    branches-ignore:
-      - main
-      - release
+  # push:
+  #   branches-ignore:
+  #     - main
+  #     - release
 
 permissions:
   id-token: write

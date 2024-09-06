@@ -28,10 +28,10 @@ on:
         required: true
         default: true
         type: boolean
-  push:
-    branches-ignore:
-      - main
-      - release
+  # push:
+  #   branches-ignore:
+  #     - main
+  #     - release
 
 permissions:
     contents: read

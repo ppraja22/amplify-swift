@@ -72,6 +72,9 @@ class StorageTransferResponse {
         } else if 400 == statusCode {
             // 400 is a bad request
             result = false
+        } else if 403 == statusCode {
+            // 403 is due to lack of permissions
+            result = false
         } else if (transferTask.responseText ?? "").isEmpty {
             // If we didn't get any more info from the server, error is retriable
             result = true
