@@ -25,8 +25,10 @@ class AWSS3StoragePluginAccelerateIntegrationTests: AWSS3StoragePluginTestBase {
         let task = Amplify.Storage.uploadData(key: key,
                                               data: data,
                                               options: .init(pluginOptions:["useAccelerateEndpoint": useAccelerateEndpoint]))
-        _ = try await task.value
-        try await Amplify.Storage.remove(key: key)
+        await waitTasks(timeout: 5) {
+            _ = try await task.value
+            try await Amplify.Storage.remove(key: key)
+        }
     }
 
     /// Given: A data object.
@@ -35,15 +37,17 @@ class AWSS3StoragePluginAccelerateIntegrationTests: AWSS3StoragePluginTestBase {
     func testUploadDataWithAccelerateDisabledExplicitlyToWrongType() async throws {
         let key = UUID().uuidString
         let data = Data(key.utf8)
-        do {
-            let task = Amplify.Storage.uploadData(key: key,
-                                                  data: data,
-                                                  options: .init(pluginOptions:["useAccelerateEndpoint": "false"]))
-            _ = try await task.value
-            XCTFail("Expecting error from bogus useAccelerateEndpoint value type (String)")
-            try await Amplify.Storage.remove(key: key)
-        } catch {
-            XCTAssertNotNil(error)
+        await waitTasks(timeout: 5) {
+            do {
+                let task = Amplify.Storage.uploadData(key: key,
+                                                      data: data,
+                                                      options: .init(pluginOptions:["useAccelerateEndpoint": "false"]))
+                _ = try await task.value
+                XCTFail("Expecting error from bogus useAccelerateEndpoint value type (String)")
+                try await Amplify.Storage.remove(key: key)
+            } catch {
+                XCTAssertNotNil(error)
+            }
         }
     }
 
@@ -63,8 +67,10 @@ class AWSS3StoragePluginAccelerateIntegrationTests: AWSS3StoragePluginTestBase {
         let task = Amplify.Storage.uploadFile(key: key,
                                               local: fileURL,
                                               options: .init(pluginOptions:["useAccelerateEndpoint": useAccelerateEndpoint]))
-        _ = try await task.value
-        try await Amplify.Storage.remove(key: key)
+        await waitTasks(timeout: 5) {
+            _ = try await task.value
+            try await Amplify.Storage.remove(key: key)
+        }
     }
 
     /// Given: A large data object.
@@ -75,8 +81,10 @@ class AWSS3StoragePluginAccelerateIntegrationTests: AWSS3StoragePluginTestBase {
         let task = Amplify.Storage.uploadData(key: key,
                                               data: AWSS3StoragePluginTestBase.largeDataObject,
                                               options: .init(pluginOptions:["useAccelerateEndpoint": useAccelerateEndpoint]))
-        _ = try await task.value
-        try await Amplify.Storage.remove(key: key)
+        await waitTasks(timeout: 15) {
+            _ = try await task.value
+            try await Amplify.Storage.remove(key: key)
+        }
     }
 
     /// Given: An object in storage.

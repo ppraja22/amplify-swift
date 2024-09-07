@@ -201,7 +201,9 @@ class AWSS3StoragePluginBasicIntegrationTests: AWSS3StoragePluginTestBase {
         let fileURL = URL(fileURLWithPath: filePath)
         removeIfExists(fileURL)
 
-        _ = try await Amplify.Storage.downloadFile(key: key, local: fileURL, options: .init()).value
+        await waitTasks(timeout: 20) {
+            _ = try await Amplify.Storage.downloadFile(key: key, local: fileURL, options: .init()).value
+        }
 
         let fileExists = FileManager.default.fileExists(atPath: fileURL.path)
         XCTAssertTrue(fileExists)
