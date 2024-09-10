@@ -17,7 +17,7 @@ public struct StorageDownloadDataRequest: AmplifyOperationRequest {
     ///
     /// - Tag: StorageDownloadFileRequest.path
     public let path: (any StoragePath)?
-    
+
     /// The unique identifier for the object in storage
     ///
     /// - Tag: StorageDownloadDataRequest.key
@@ -91,9 +91,11 @@ public extension StorageDownloadDataRequest {
         ///
         /// - Tag: StorageDownloadDataRequestOptions.init
         @available(*, deprecated, message: "Use init(pluginOptions)")
-        public init(accessLevel: StorageAccessLevel = .guest,
-                    targetIdentityId: String? = nil,
-                    pluginOptions: Any? = nil) {
+        public init(
+            accessLevel: StorageAccessLevel = .guest,
+            targetIdentityId: String? = nil,
+            pluginOptions: Any? = nil
+        ) {
             self.accessLevel = accessLevel
             self.targetIdentityId = targetIdentityId
             self.pluginOptions = pluginOptions
