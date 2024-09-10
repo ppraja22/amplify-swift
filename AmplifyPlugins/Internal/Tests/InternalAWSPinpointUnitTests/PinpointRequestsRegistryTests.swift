@@ -7,8 +7,8 @@
 
 import AWSPinpoint
 import ClientRuntime
-@_spi(InternalAWSPinpoint) @testable import InternalAWSPinpoint
 import XCTest
+@_spi(InternalAWSPinpoint) @testable import InternalAWSPinpoint
 
 class PinpointRequestsRegistryTests: XCTestCase {
     private var mockedHttpSdkClient: MockHttpClientEngine!
@@ -24,8 +24,10 @@ class PinpointRequestsRegistryTests: XCTestCase {
         let oldHttpClientEngine = pinpointConfiguration.httpClientEngine
         PinpointRequestsRegistry.shared.setCustomHttpEngine(on: pinpointConfiguration)
 
-        XCTAssertNotEqual(oldHttpClientEngine.typeString,
-                          pinpointConfiguration.httpClientEngine.typeString)
+        XCTAssertNotEqual(
+            oldHttpClientEngine.typeString,
+            pinpointConfiguration.httpClientEngine.typeString
+        )
     }
 
     func testExecute_withSourcesRegistered_shouldAppendSuffixToUserAgent() async throws {
@@ -106,6 +108,6 @@ private class MockLogAgent: LogAgent {
     let name = "MockLogAgent"
     var level: LogAgentLevel = .info
 
-    func log(level: ClientRuntime.LogAgentLevel, message: String, metadata: [String : String]?, source: String, file: String, function: String, line: UInt) {
+    func log(level: ClientRuntime.LogAgentLevel, message: String, metadata: [String: String]?, source: String, file: String, function: String, line: UInt) {
     }
 }
